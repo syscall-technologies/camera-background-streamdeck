@@ -71,6 +71,7 @@ tools/appid.sh "zoom.us"  # one installed app by name
 | Microsoft Teams | `com.microsoft.teams2` |
 | Zoom | `us.zoom.xos` |
 | FaceTime | `com.apple.FaceTime` |
+| Signal | `org.whispersystems.signal-desktop` |
 
 Browser meetings (Google Meet and others) use the browser's ID, for example `com.google.Chrome`.
 
