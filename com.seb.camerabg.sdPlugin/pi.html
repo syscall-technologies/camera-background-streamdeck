@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 13px -apple-system, sans-serif; color: #d8d8d8; background: #2d2d2d; margin: 8px; }
+  label { display: block; margin-bottom: 4px; }
+  input { width: 100%; box-sizing: border-box; padding: 4px; background: #3d3d3d; color: inherit; border: 1px solid #555; }
+  small { color: #999; }
+</style>
+</head>
+<body>
+  <label for="appId">App ID</label>
+  <input id="appId" placeholder="com.microsoft.teams2">
+  <small>Empty = Microsoft Teams. Find IDs with <code>./appid.sh</code> in the repo.</small>
+<script>
+// Stream Deck calls this global to connect the property inspector.
+function connectElgatoStreamDeckSocket(port, uuid, registerEvent, info, actionInfo) {
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+  const input = document.getElementById("appId");
+  input.value = JSON.parse(actionInfo).payload.settings.appId || "";
+  ws.onopen = () => ws.send(JSON.stringify({ event: registerEvent, uuid }));
+  input.onchange = () => ws.send(JSON.stringify({ event: "setSettings", context: uuid, payload: { appId: input.value.trim() } }));
+}
+</script>
+</body>
+</html>

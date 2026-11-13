@@ -1,0 +1,28 @@
+{
+  "SDKVersion": 2,
+  "UUID": "com.seb.camerabg",
+  "Name": "Camera Background",
+  "Version": "1.0.0.0",
+  "Author": "Sebastien Marchal",
+  "Description": "Toggle macOS Video Effects > Background for an app; key icon follows the current state.",
+  "Icon": "imgs/plugin",
+  "Category": "Camera Background",
+  "CategoryIcon": "imgs/plugin",
+  "CodePath": "plugin.js",
+  "PropertyInspectorPath": "pi.html",
+  "Nodejs": { "Version": "24" },
+  "OS": [{ "Platform": "mac", "MinimumVersion": "15" }],
+  "Software": { "MinimumVersion": "6.5" },
+  "Actions": [
+    {
+      "UUID": "com.seb.camerabg.toggle",
+      "Name": "Toggle Background",
+      "Tooltip": "Turn the macOS camera background on/off for the chosen app",
+      "Icon": "imgs/plugin",
+      "Controllers": ["Keypad"],
+      "SupportedInMultiActions": false,
+      "DisableAutomaticStates": true,
+      "States": [{ "Image": "imgs/off" }, { "Image": "imgs/on" }]
+    }
+  ]
+}
