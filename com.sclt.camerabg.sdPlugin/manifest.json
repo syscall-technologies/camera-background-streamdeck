@@ -1,0 +1,46 @@
+{
+  "SDKVersion": 2,
+  "UUID": "com.sclt.camerabg",
+  "Name": "Camera Background",
+  "Version": "1.0.0.0",
+  "Author": "0xSeb",
+  "Description": "Toggle the macOS camera background (Video Effects) for an app; the key shows the current state.",
+  "Icon": "imgs/plugin",
+  "Category": "Camera Background",
+  "CategoryIcon": "imgs/category",
+  "CodePath": "plugin.js",
+  "PropertyInspectorPath": "pi.html",
+  "Nodejs": {
+    "Version": "24"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "15"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "Actions": [
+    {
+      "UUID": "com.sclt.camerabg.toggle",
+      "Name": "Toggle",
+      "Tooltip": "Turn the camera background on or off",
+      "Icon": "imgs/action",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/off"
+        },
+        {
+          "Image": "imgs/on"
+        }
+      ]
+    }
+  ]
+}

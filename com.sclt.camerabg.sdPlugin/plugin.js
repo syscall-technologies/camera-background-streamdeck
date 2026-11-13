@@ -1,9 +1,9 @@
 // Minimal Stream Deck plugin, no deps (Node 24 has a global WebSocket).
-// Polls `bgfx status` to set the key state (0 = off, 1 = on); a press runs `bgfx toggle`.
+// Polls bgfx.js for each key's app (state 0 = off, 1 = on); a press toggles it.
 const { execFile } = require("node:child_process");
 const path = require("node:path");
 
-const BGFX = path.join(__dirname, "bin", "bgfx");
+const BGFX = path.join(__dirname, "bgfx.js");
 const DEFAULT_APP = "com.microsoft.teams2";
 const parseState = (out) => ({ on: 1, off: 0 })[String(out).trim()]; // undefined = unknown
 
@@ -11,7 +11,7 @@ if (process.argv.includes("--selftest")) {
   const assert = require("node:assert");
   assert.equal(parseState("on\n"), 1);
   assert.equal(parseState("off\n"), 0);
-  assert.equal(parseState("private Video Effects API not found"), undefined);
+  assert.equal(parseState(""), undefined);
   console.log("selftest ok");
   process.exit(0);
 }
@@ -22,15 +22,13 @@ const ws = new WebSocket(`ws://127.0.0.1:${arg("-port")}`);
 const send = (msg) => ws.readyState === WebSocket.OPEN && ws.send(JSON.stringify(msg));
 
 function run(cmd, context) {
-  execFile(BGFX, [cmd, keys.get(context)], { timeout: 5000 }, (err, stdout) => {
+  execFile("/usr/bin/osascript", ["-l", "JavaScript", BGFX, cmd, keys.get(context)], { timeout: 5000 }, (err, stdout) => {
     const state = parseState(stdout);
-    if (state === undefined) return send({ event: "showAlert", context }); // API gone (macOS update) or bad ID
+    // No state: the private API is gone (macOS update) or the change failed.
+    if (err || state === undefined) return send({ event: "showAlert", context });
     send({ event: "setState", context, payload: { state } });
-    if (err && cmd === "toggle") send({ event: "showAlert", context }); // change did not stick
   });
 }
-
-const refresh = () => keys.forEach((_app, context) => run("status", context));
 
 ws.onopen = () => send({ event: arg("-registerEvent"), uuid: arg("-pluginUUID") });
 ws.onmessage = ({ data }) => {
@@ -43,4 +41,4 @@ ws.onmessage = ({ data }) => {
   if (event === "keyDown") run("toggle", context);
 };
 ws.onclose = () => process.exit(0);
-setInterval(refresh, 2000); // also catches changes made from Control Center
+setInterval(() => keys.forEach((_app, context) => run("status", context)), 2000); // follows Control Center changes too

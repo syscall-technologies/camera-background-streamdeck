@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the release and upload the installer
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm install -g @elgato/cli@latest
+      - run: streamdeck validate com.sclt.camerabg.sdPlugin --no-update-check
+      # Version comes from the tag (v1.2.3 -> 1.2.3.0) so the manifest never drifts from the release.
+      - run: streamdeck pack com.sclt.camerabg.sdPlugin -o dist --version "${GITHUB_REF_NAME#v}" --no-update-check
+      - run: gh release create "$GITHUB_REF_NAME" dist/com.sclt.camerabg.streamDeckPlugin --title "Camera Background for Stream Deck ${GITHUB_REF_NAME#v}" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

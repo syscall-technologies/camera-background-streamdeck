@@ -1,82 +1,119 @@
-# macOS camera background on a Stream Deck key
+<div align="center">
 
-Toggle macOS **Video Effects → Background** (the background replacement in Control Center) from a Stream Deck key. The key's icon shows the current state, and it also updates when you change the background from Control Center.
+<img src="com.sclt.camerabg.sdPlugin/imgs/on@2x.png" width="96" alt="Camera Background key, on">
 
-| Off | On |
-|-----|----|
-| ![off](com.seb.camerabg.sdPlugin/imgs/off@2x.png) | ![on](com.seb.camerabg.sdPlugin/imgs/on@2x.png) |
+# Camera Background for Stream Deck
 
-No clicking through the UI, no Accessibility permission, and no menu bar icon needed: `bgfx` calls the same private AVFoundation function Control Center uses.
+**One key to turn your Mac's camera background on and off.**
 
-> **Private API warning.** Tested on macOS 27.2 with Stream Deck 7.6.1. Apple can change or remove this API in any update. When that happens, `bgfx` exits with `private Video Effects API not found` and the key shows a warning triangle instead of failing silently.
+[![macOS 15+](https://img.shields.io/badge/macOS-15%2B-000000?logo=apple&logoColor=white)](#requirements)
+[![Stream Deck 7.1+](https://img.shields.io/badge/Stream%20Deck-7.1%2B-6E44FF)](#requirements)
+[![Dependencies: 0](https://img.shields.io/badge/dependencies-0-brightgreen)](com.sclt.camerabg.sdPlugin/plugin.js)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+</div>
+
+---
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="com.sclt.camerabg.sdPlugin/imgs/off@2x.png" width="96" alt="off"><br><sub><b>Off</b> · your real background</sub></td>
+    <td align="center"><img src="com.sclt.camerabg.sdPlugin/imgs/on@2x.png" width="96" alt="on"><br><sub><b>On</b> · macOS background replacement</sub></td>
+  </tr>
+</table>
+
+Press the key to switch macOS **Video Effects → Background** for your meeting app (Microsoft Teams by default). The key always shows the real state, even when you change it from Control Center.
+
+## Why this one
+
+- 🎯 **The real switch.** It flips the same setting as Control Center, through the API Control Center itself uses. It doesn't click through menus.
+- 👀 **Live icon.** The key checks the state every 2 seconds, so it never drifts.
+- 🪶 **Tiny.** Plain JavaScript and macOS's built-in `osascript`. No npm, no build step, no binary.
+- 🔒 **No permissions.** No Accessibility, Screen Recording or admin access, and no menu bar icon needed.
 
 ## Requirements
 
-- macOS 15 or later (Video Effects Background); tested on 27.2
-- Xcode Command Line Tools (`xcode-select --install`), for `clang`
-- Stream Deck app 6.5 or later (the plugin uses its bundled Node 24)
+- macOS 15 or later (tested on macOS 27.2)
+- Stream Deck app 7.1 or later, with any Stream Deck that has keys (tested on a Stream Deck + XL)
 
 ## Install
 
+**[⬇ Download Camera Background for Stream Deck](https://github.com/syscall-technologies/camera-background-streamdeck/releases/latest/download/com.sclt.camerabg.streamDeckPlugin)**, then double-click the file. Stream Deck installs it for you.
+
+Then drag **Camera Background → Toggle** onto a key.
+
+<details>
+<summary>Install from source instead</summary>
+
 ```sh
-./install.sh
+git clone https://github.com/syscall-technologies/camera-background-streamdeck.git
+ln -s "$PWD/camera-background-streamdeck/com.sclt.camerabg.sdPlugin" \
+  ~/Library/Application\ Support/com.elgato.StreamDeck/Plugins/
 ```
 
-The script builds `bgfx` into the plugin, symlinks the plugin into Stream Deck's plugin folder, and restarts Stream Deck. Then drag **Camera Background → Toggle Background** onto a key.
+Restart the Stream Deck app, then drag **Camera Background → Toggle** onto a key.
 
-Re-run `./install.sh` after moving the repo or after a macOS update.
+</details>
 
-## Choosing the app
+## Using it with another app
 
-Video Effects are stored **per app**. The key defaults to Microsoft Teams (`com.microsoft.teams2`). For another app, select the key and enter its **App ID** in the Stream Deck settings panel. Each key can target a different app.
+Video Effects are set **per app**. Each key controls one app: select the key in Stream Deck and type the app's ID in **App ID**. Leave it empty for Microsoft Teams. You can have one key per app.
 
 To find an app's ID:
 
 ```sh
-./appid.sh            # list running apps and their IDs
-./appid.sh "zoom.us"  # ID of an installed app by name
+tools/appid.sh            # running apps and their IDs
+tools/appid.sh "zoom.us"  # one installed app by name
 ```
 
-## Command line
+| App | App ID |
+|-----|--------|
+| Microsoft Teams | `com.microsoft.teams2` |
+| Zoom | `us.zoom.xos` |
+| FaceTime | `com.apple.FaceTime` |
 
-`bgfx` also works on its own:
+Browser meetings (Google Meet and others) use the browser's ID, for example `com.google.Chrome`.
+
+## Is it working?
+
+Start a call, then run:
 
 ```sh
-com.seb.camerabg.sdPlugin/bin/bgfx status                 # on | off   (Teams)
-com.seb.camerabg.sdPlugin/bin/bgfx toggle                 # flip it, prints the new state
-com.seb.camerabg.sdPlugin/bin/bgfx on  us.zoom.xos        # force on for Zoom
-com.seb.camerabg.sdPlugin/bin/bgfx off us.zoom.xos        # force off for Zoom
+osascript -l JavaScript com.sclt.camerabg.sdPlugin/bgfx.js status com.microsoft.teams2
 ```
 
-Exit codes: `0` ok, `1` the change didn't stick, `2` private API not found, `64` bad usage.
+It prints `on` or `off`, matching the key and Control Center's camera menu. `toggle`, `on` and `off` work too.
 
-## How it works
+## Good to know
 
-- Reading the state: `AVControlCenterVideoEffectsModuleIsEffectEnabledForBundleID(effect, bundleID)`, exported by AVFoundation.
-- Writing the state: `-[AVControlCenterModuleState setEnabled:forVideoEffect:]` on `+[AVControlCenterModuleState moduleStateForBundleID:]`.
-- The effect is the `AVControlCenterVideoEffectBackgroundReplacement` constant.
+> [!WARNING]
+> This uses a **private** macOS API (`AVControlCenterModuleState`), the one Control Center uses. Apple can change it in any macOS update. If that happens, the key shows a ⚠️ warning instead of a wrong state.
 
-The plugin (`plugin.js`, plain Node with no dependencies) checks `bgfx status` every 2 seconds for each key and runs `bgfx toggle` when you press the key.
+> [!NOTE]
+> The key controls the **Background** effect only, not Portrait (blur) or Studio Light. You still pick the background image in Control Center.
 
-## Files
+## Hacking
 
 | Path | What |
 |------|------|
-| `bgfx.m` | The CLI that reads and sets the Background effect |
-| `appid.sh` | Finds app bundle IDs |
-| `install.sh` | Builds and installs the plugin |
-| `com.seb.camerabg.sdPlugin/` | Stream Deck plugin: manifest, `plugin.js`, `pi.html` (settings panel), icons |
-| `tools/make-icons.swift` | Regenerates the key icons from SF Symbols: `swift tools/make-icons.swift` |
+| [`com.sclt.camerabg.sdPlugin/bgfx.js`](com.sclt.camerabg.sdPlugin/bgfx.js) | Reads and sets the effect through the private API |
+| [`com.sclt.camerabg.sdPlugin/plugin.js`](com.sclt.camerabg.sdPlugin/plugin.js) | The plugin: polls the state, toggles on key press |
+| [`com.sclt.camerabg.sdPlugin/pi.html`](com.sclt.camerabg.sdPlugin/pi.html) | The App ID setting |
+| [`com.sclt.camerabg.sdPlugin/manifest.json`](com.sclt.camerabg.sdPlugin/manifest.json) | Stream Deck manifest |
+| [`tools/appid.sh`](tools/appid.sh) | Finds app IDs |
+| [`tools/icons.swift`](tools/icons.swift) | Draws the key images from SF Symbols: `swift tools/icons.swift com.sclt.camerabg.sdPlugin/imgs` |
 
-## Not covered
+How it works: `AVControlCenterVideoEffectsModuleIsEffectEnabledForBundleID(effect, appID)` reads the state, and `-[AVControlCenterModuleState setEnabled:forVideoEffect:]` sets it. The effect is `AVControlCenterVideoEffectBackgroundReplacement`. Both live in AVFoundation and are called from JavaScript for Automation.
 
-- Portrait (blur), Studio Light and the other effects. `bgfx` only handles Background. The other effect constants exist (`AVControlCenterVideoEffectBackgroundBlur`, …) if you want to extend it.
-- Choosing the background image. That still happens in Control Center.
-
-## Uninstall
+To build the installer, use the [Stream Deck CLI](https://docs.elgato.com/streamdeck/cli/intro) (`npm install -g @elgato/cli`):
 
 ```sh
-rm "$HOME/Library/Application Support/com.elgato.StreamDeck/Plugins/com.seb.camerabg.sdPlugin"
+streamdeck validate com.sclt.camerabg.sdPlugin
+streamdeck pack com.sclt.camerabg.sdPlugin -o dist
 ```
 
-Then restart Stream Deck.
+To release, push a signed tag: `git tag -s v1.0.1 -m v1.0.1 && git push origin v1.0.1`. The [release workflow](.github/workflows/release.yml) validates, packs and publishes the installer.
+
+## License
+
+[MIT](LICENSE) © 0xSeb
